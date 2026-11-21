@@ -1,8 +1,8 @@
 """Application settings using Pydantic."""
 
-from typing import Optional, List
-from pydantic_settings import BaseSettings
-from pydantic import Field
+from typing import Optional, List, Annotated
+from pydantic_settings import BaseSettings, NoDecode
+from pydantic import Field, field_validator
 from functools import lru_cache
 
 
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     debug: bool = Field(False, description="Debug mode")
     
     # CORS Settings
-    cors_origins: List[str] = Field(
+    cors_origins: Annotated[List[str], NoDecode] = Field(
         ["http://localhost:3000", "http://127.0.0.1:3000"],
         description="Allowed CORS origins"
     )
@@ -46,6 +46,18 @@ class Settings(BaseSettings):
     # File paths
     inputs_dir: str = Field("inputs", description="Input files directory")
     results_dir: str = Field("results", description="Results output directory")
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value):
+        """Accept CORS origins as a JSON array or comma-separated text."""
+        if isinstance(value, str):
+            value = value.strip()
+            if value.startswith("["):
+                import json
+                return json.loads(value)
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
     
     class Config:
         env_file = ".env"
