@@ -1,6 +1,6 @@
 # CVRPTW Solver - Docker Deployment
 
-## Quick Start
+## Start
 
 ### Build and run with Docker Compose (Recommended)
 
