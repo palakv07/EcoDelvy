@@ -18,15 +18,6 @@
 > **Capacitated Vehicle Routing Problem with Time Windows** - An advanced optimization system for logistics and delivery route planning
 > ⚠️ **Note**: This is not a production-ready project but has a clean architecture, demonstrating professional vehicle routing optimization techniques.
 
-<div align="center">
-
-[![Donate with PayPal](https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=9CSNUCM9FX53S)
-
-**💙 Support this project! If you find it useful, consider buying me a coffee ☕**
-
-</div>
-
-
 ## 📋 Overview
 
 Fleet Route Optimizer is a comprehensive web-based application for solving complex vehicle routing problems with constraints including:
