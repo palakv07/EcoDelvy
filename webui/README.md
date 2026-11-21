@@ -1,4 +1,4 @@
-# Fleet Route Optimizer - Web UI
+# Fleet Route Optimizer
 
 React-based web interface for the Fleet Route Optimizer [CVRPTW] - solving Capacitated Vehicle Routing Problem with Time Windows using real-world routing data.
 
