@@ -1,8 +1,4 @@
-<div align="center">
-  <img src="assets/logo.png" alt="Fleet Route Optimizer Logo" width="400px"/>
-</div>
 
-<h1 align="center"> Fleet Route Optimizer [CVRPTW]</h1>
 
 <div align="center">
 
