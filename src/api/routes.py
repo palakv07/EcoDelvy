@@ -13,6 +13,7 @@ from ..models.api import SolveRequest, SolveResponse, HealthResponse, SolverConf
 from ..services import SolverService
 from ..config import get_logger
 from .dependencies import verify_api_key
+from pydantic import ValidationError
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -35,7 +36,7 @@ async def health_check():
 
 @router.post('/solve', response_model=SolveResponse)
 async def solve_endpoint(
-    payload: dict = Body(...),
+    payload: SolveRequest = Body(...),
     time_limit: int = Query(60, description="Time limit in seconds", ge=1, le=3600),
     solver: str = Query("ortools", description="Solver type: 'ortools' or 'gurobi'"),
     vehicle_penalty_weight: float = Query(None, description="Weight for minimizing vehicles"),
@@ -60,7 +61,7 @@ async def solve_endpoint(
     """
     try:
         result = solver_service.solve(
-            payload=payload,
+            payload=payload.model_dump(),
             solver_type=solver,
             time_limit=time_limit,
             vehicle_penalty_weight=vehicle_penalty_weight,
@@ -84,6 +85,8 @@ async def solve_endpoint(
     except ValueError as e:
         # Solver busy
         raise HTTPException(status_code=503, detail=str(e))
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())
     except Exception as e:
         logger.exception("Error during solve")
         raise HTTPException(status_code=500, detail=f"Solver error: {str(e)}")
