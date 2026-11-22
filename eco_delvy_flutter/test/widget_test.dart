@@ -5,19 +5,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('optimizer starts with file upload and solve disabled', (
+  testWidgets('dashboard navigates to optimizer before solving', (
     tester,
   ) async {
     await tester.pumpWidget(
       const MaterialApp(home: OptimizerScreen()),
     );
 
-    expect(find.text('EcoDelvy Fleet Optimizer'), findsOneWidget);
-    expect(find.text('Load JSON file'), findsOneWidget);
+    expect(find.text('Fleet Overview'), findsWidgets);
+    await tester.tap(find.text('New optimization'));
+    await tester.pumpAndSettle();
+    expect(find.text('Browse JSON'), findsOneWidget);
     final solveButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Solve routes'),
+      find.widgetWithText(FilledButton, 'Run optimization'),
     );
     expect(solveButton.onPressed, isNull);
+  });
+
+  testWidgets('mobile navigation opens the customers empty state', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: OptimizerScreen()),
+    );
+
+    await tester.tap(find.byTooltip('Open navigation'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Customers'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No Customers data loaded'), findsOneWidget);
+    expect(find.text('Open route optimizer'), findsOneWidget);
   });
 
   testWidgets('route summary shows solver metrics and route details', (
@@ -92,7 +115,10 @@ void main() {
                     {
                       'vehicle_id': 0,
                       'route': [
-                        {'location': 0, 'location_info': {'type': 'depot'}},
+                        {
+                          'location': 0,
+                          'location_info': {'type': 'depot'},
+                        },
                         {
                           'location': 4,
                           'time': 510,

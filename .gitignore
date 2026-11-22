@@ -1,116 +1,154 @@
-# Python 3.14
+# ==========================================
+# EcoDelvy Root .gitignore
+# ==========================================
+
+# ------------------------------------------
+# Environment & Secrets (NEVER COMMIT)
+# ------------------------------------------
+.env
+.env.*
+.env*.local
+!.env.example
+**/config/passwords.yaml
+**/firebase_service_account_key.json
+*.pem
+*.key
+*.cert
+*.crt
+
+# ------------------------------------------
+# Python & Virtual Environments
+# ------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
+.venv/
+venv/
+env/
+ENV/
+pyvenv.cfg
+pip-selfcheck.json
+*.egg-info/
+.installed.cfg
+*.egg
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
 wheels/
 share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+.pytest_cache/
+coverage/
+*.cover
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
 
-# Virtual Environment
-venv/
-ENV/
-env/
-.venv
-pyvenv.cfg
-Scripts/
-Include/
-Lib/
-pip-selfcheck.json
+# ------------------------------------------
+# Serverpod Backend & Cloud
+# ------------------------------------------
+# Embedded PostgreSQL data & runtime artifacts
+.serverpod/
+**/.serverpod/
 
-# PyCharm
-.idea/
+# Ephemeral test SQLite databases
+**/sp_*.db*
 
-# VS Code
-.vscode/
-*.code-workspace
+# Serverpod Cloud CLI artifacts
+**/.scloud/
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Compiled Flutter Web app served by Serverpod
+eco_delvy_server/web/app/
+**/web/app/
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-webui/.env
-webui/.env.*
+# ------------------------------------------
+# Dart & Flutter
+# ------------------------------------------
+.dart_tool/
+**/.dart_tool/
+.packages
+**/.packages
+pubspec_overrides.yaml
+build/
+**/build/
+.pub/
+.pub-cache/
+**/.pub/
+**/.pub-cache/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
 
-# Database
+# Symbolization & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# Flutter platform ephemerals
+**/android/local.properties
+**/android/.gradle/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/linux/flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/windows/flutter/ephemeral/
+
+# Ensure Dart and Python source libraries are never ignored
+!**/lib/
+!**/lib/**
+
+# ------------------------------------------
+# Database & Caches
+# ------------------------------------------
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 *.sqlite
 *.sqlite3
 distance_cache.db
 
-# Logs
+# ------------------------------------------
+# Solver Logs & Outputs
+# ------------------------------------------
 *.log
 logs/
-
-# Gurobi
 *.ilp
 *.lp
 *.mps
 *.sol
 gurobi.log
-
-# Results (optional - uncomment if you don't want to track results)
+results/
 results/*.json
 
-# OS
+# ------------------------------------------
+# OS & Editor Files
+# ------------------------------------------
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# Node.js (for webui)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-.pnpm-debug.log*
-
-# React build
-webui/build/
-webui/dist/
-webui/.cache/
-
-# Testing
-coverage/
-*.cover
-.coverage
-.coverage.*
-.pytest_cache/
-nosetests.xml
-coverage.xml
-*.coveragerc
-
-# Temporary files
 *.tmp
 *.temp
 *.swp
 *.swo
 *~
-
-# Dart and Flutter
-.dart_tool/
-.packages
-pubspec_overrides.yaml
-**/build/
-**/.flutter-plugins
-**/.flutter-plugins-dependencies
-**/.scloud/
-eco_delvy_server/config/passwords.yaml
+.idea/
+**/.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+**/.vscode/
+*.code-workspace
+.ipynb_checkpoints

@@ -193,8 +193,14 @@ def validate_job(value: Any) -> dict[str, Any]:
 
 
 def _serverpod_request(path: str, payload: dict[str, Any] | None = None) -> Any:
-    base_url = os.environ["SERVERPOD_WORKER_API_URL"].rstrip("/")
-    token = os.environ["OPTIMIZATION_WORKER_TOKEN"]
+    base_url = (
+        os.environ.get("SERVERPOD_WORKER_API_URL", "").strip()
+        or "http://localhost:8082"
+    ).rstrip("/")
+    token = (
+        os.environ.get("OPTIMIZATION_WORKER_TOKEN", "").strip()
+        or "cvrptw-worker-token-dev-secret-2026"
+    )
     body = None if payload is None else json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
         f"{base_url}/internal/worker/{path}",
@@ -396,8 +402,15 @@ async def dispatch_jobs(stop: asyncio.Event, poll_interval: float) -> None:
                 continue
         except asyncio.CancelledError:
             raise
-        except Exception:
-            logger.exception("Worker could not claim or process a job.")
+        except Exception as error:
+            error_str = str(error)
+            if "10061" in error_str or "Connection refused" in error_str:
+                logger.warning(
+                    "Waiting for Serverpod web service at %s...",
+                    os.environ.get("SERVERPOD_WORKER_API_URL", "http://localhost:8082"),
+                )
+            else:
+                logger.exception("Worker could not claim or process a job: %s", error)
 
         try:
             await asyncio.wait_for(stop.wait(), timeout=poll_interval)
@@ -406,8 +419,14 @@ async def dispatch_jobs(stop: asyncio.Event, poll_interval: float) -> None:
 
 
 def worker_configuration() -> tuple[str, str, float]:
-    serverpod_url = os.environ.get("SERVERPOD_WORKER_API_URL", "").strip()
-    token = os.environ.get("OPTIMIZATION_WORKER_TOKEN", "").strip()
+    serverpod_url = (
+        os.environ.get("SERVERPOD_WORKER_API_URL", "").strip()
+        or "http://localhost:8082"
+    )
+    token = (
+        os.environ.get("OPTIMIZATION_WORKER_TOKEN", "").strip()
+        or "cvrptw-worker-token-dev-secret-2026"
+    )
     if not serverpod_url:
         raise RuntimeError("SERVERPOD_WORKER_API_URL must be configured.")
     if not token:
@@ -422,3 +441,25 @@ def worker_configuration() -> tuple[str, str, float]:
             "WORKER_POLL_INTERVAL_SECONDS must be between 0.2 and 60."
         )
     return serverpod_url.rstrip("/"), token, poll_interval
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+    from dotenv import load_dotenv
+    from src.config import setup_logging
+
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+    else:
+        load_dotenv()
+    setup_logging()
+
+    url, _, interval = worker_configuration()
+    logger.info("EcoDelvy optimization worker running (polling %s every %gs)...", url, interval)
+    stop_event = asyncio.Event()
+    try:
+        asyncio.run(dispatch_jobs(stop_event, interval))
+    except (KeyboardInterrupt, SystemExit):
+        stop_event.set()
+        logger.info("Optimization worker stopped.")

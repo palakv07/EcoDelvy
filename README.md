@@ -1,125 +1,95 @@
 # EcoDelvy
 
-EcoDelvy is a capacitated vehicle-routing-with-time-windows application using Flutter Web, Serverpod, PostgreSQL, FastAPI, and a private Python optimization worker.
+EcoDelvy is a capacitated vehicle-routing-with-time-windows (CVRPTW) application using Flutter Web, Serverpod, PostgreSQL, and a private Python optimization worker.
 
 ## Architecture
 
-- `eco_delvy_flutter/`: Flutter Web client
-- `eco_delvy_server/`: Serverpod API, authentication, PostgreSQL models, jobs, logs, and worker routes
-- `eco_delvy_client/`: generated Serverpod client
-- `optimization_service/`: private Python optimization worker
-- `src/`: existing solver and problem-building implementation
-- `webui/`: legacy React and FastAPI interface
-- `inputs/`: tracked CVRPTW example fixtures
+- `eco_delvy_flutter/`: Flutter Web frontend client
+- `eco_delvy_server/`: Serverpod API (port 8080), PostgreSQL models, job queues, logs, and worker internal endpoints (port 8082)
+- `eco_delvy_client/`: generated Serverpod Dart client
+- `optimization_service/`: private Python optimization worker running Google OR-Tools and Gurobi solvers
+- `src/`: core solver implementation, distance caching, and problem builders
+- `inputs/`: tracked CVRPTW example JSON fixtures (`CVRPTW_SMALL.json`, `CVRPTW_MEDIUM.json`, `CVRPTW_LARGE.json`)
 
-## Local setup
+## How Job Processing Works
 
-### 1. Configure Python
+1. In Flutter Web, you upload a problem JSON file and click **Optimize**.
+2. Flutter submits the job to Serverpod API (`http://localhost:8080`). Serverpod marks it as `queued` in PostgreSQL.
+3. The **Python Optimization Worker** polls Serverpod (`http://localhost:8082/internal/worker/claim`), claims the job, runs the OR-Tools / Gurobi solver, streams execution logs, and posts the completed routes back to Serverpod.
+4. Serverpod stores the solution and marks the job `succeeded`.
+5. Flutter polls Serverpod, receives the solution, and displays the routes, interactive map, summary cards, and timeline.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
+> **Note**: Both Serverpod AND the Python worker must be running for optimization jobs to complete and return output for your JSON files.
 
-Set `AUTH_SECRET_KEY` in `.env` to the generated value. The legacy UI can use `AUTH_EMAIL` and `AUTH_PASSWORD`. Keep `.env` and all passwords out of Git.
+## Local Setup & Quick Start
 
-### 2. Configure worker and Serverpod secrets
-
-Set matching values:
-
-```text
-OPTIMIZATION_WORKER_TOKEN=<long-random-secret>
-SERVERPOD_WORKER_API_URL=http://localhost:8082
-```
-
-Add the same secret to the git-ignored Serverpod password file:
-
-```yaml
-# eco_delvy_server/config/passwords.yaml
-shared:
-  optimizationWorkerToken: '<same-long-random-token>'
-```
-
-Deployments may instead set `SERVERPOD_PASSWORD_optimizationWorkerToken`.
-
-### 3. Start PostgreSQL
-
+### 1. Start PostgreSQL Database
 ```powershell
 serverpod database start --server-dir eco_delvy_server
+# Or using docker compose inside eco_delvy_server:
+# docker compose up -d
 ```
+The development PostgreSQL runs on port `8190`.
 
-The development database uses port `8190`.
-
-### 4. Start Serverpod
-
+### 2. Start Serverpod Backend
 ```powershell
 cd eco_delvy_server
-serverpod start --no-docker --no-flutter --no-attach
+serverpod start --no-flutter
 ```
-
 Serverpod serves:
+- API endpoint: `http://localhost:8080`
+- Insights tool: `http://localhost:8081`
+- Web server & worker routes: `http://localhost:8082`
 
-- API: `http://localhost:8080`
-- Insights: `http://localhost:8081`
-- Web and worker routes: `http://localhost:8082`
-
-### 5. Start the Python worker
-
+### 3. Start the Python Optimization Worker
+In a new terminal window:
 ```powershell
-cd ..
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn optimization_service.app:app --host 127.0.0.1 --port 8001
+cd EcoDelvy
+.\run_worker.ps1
+# Or:
+# .\.venv\Scripts\python.exe -m optimization_service.worker
 ```
+The worker connects to Serverpod on port `8082` and automatically processes queued jobs.
 
-The worker URL must be the Serverpod web-server origin, not the API origin.
+### 4. Run Flutter Web Frontend
 
-### 6. Run Flutter Web
+There are two ways to run the Flutter frontend:
 
+#### Option A (Instant Load via Serverpod Web Server - Recommended)
+Build the Flutter web app once:
+```powershell
+cd eco_delvy_server
+serverpod run flutter_build
+```
+This builds the Flutter app and copies it to `eco_delvy_server/web/app`.
+Now Serverpod serves your Flutter app directly at **`http://localhost:8082/`** instantly with **zero compilation wait time**!
+
+#### Option B (Development Mode)
+If actively developing Flutter UI code:
 ```powershell
 cd eco_delvy_flutter
-flutter pub get
 flutter run -d chrome --web-port 3000
 ```
+*Tip*: Using `-d chrome` supports hot-restart and is much faster than `-d web-server`.
 
-The fixed origin `http://localhost:3000` is allowed in the development Serverpod configuration.
-
-## Legacy FastAPI and React UI
-
-```powershell
-python -m uvicorn src.app:app --host 127.0.0.1 --port 8000
-```
-
-Authentication uses an HttpOnly session cookie. Start the React UI through its existing webui scripts and keep `REACT_APP_API_URL` pointed at the FastAPI URL.
-
-## Docker worker
-
-```powershell
-cd optimization_service
-docker compose --env-file ..\.env up --build
-```
-
-Set `SERVERPOD_WORKER_API_URL`, `OPTIMIZATION_WORKER_TOKEN`, and optional OSRM or Gurobi settings for the worker container.
+## Worker & Serverpod Security
+The worker and Serverpod communicate using a shared secret token:
+- In `eco_delvy_server/config/passwords.yaml`: `shared.optimizationWorkerToken`
+- In `EcoDelvy/.env`: `OPTIMIZATION_WORKER_TOKEN`
+Both default to `cvrptw-worker-token-dev-secret-2026` for seamless local development.
 
 ## Testing
-
 ```powershell
+# Python solver and worker tests
+Set-Location EcoDelvy
 .\.venv\Scripts\python.exe -m unittest optimization_service.test_worker -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 
-dart analyze eco_delvy_server
+# Serverpod server tests
 cd eco_delvy_server
 dart test
-serverpod generate
 
+# Flutter web tests
 cd ..\eco_delvy_flutter
-flutter analyze
 flutter test
-flutter build web --release
 ```
-
-## Production placeholders
-
-Before deployment, configure real database credentials and replace `examplepod.com` placeholders in `eco_delvy_server/config/production.yaml` and `eco_delvy_server/config/staging.yaml`.

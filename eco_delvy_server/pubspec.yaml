@@ -27,11 +27,7 @@ serverpod:
     # On failure, clean and retry once to clear stale Flutter build caches.
     flutter_build:
       windows: >-
-        (if exist web\app rmdir /S /Q web\app)
-        & cd /D ..\eco_delvy_flutter
-        & set ARGS=web --base-href /
-        && (call flutter build %ARGS% || (flutter clean && call flutter build %ARGS%))
-        && xcopy /E /I /Y build\web ..\eco_delvy_server\web\app
+        powershell -NoProfile -Command "if (Test-Path web\app) { Remove-Item -Recurse -Force web\app }; Set-Location ..\eco_delvy_flutter; flutter build web --base-href /; Copy-Item -Path build\web -Destination ..\eco_delvy_server\web\app -Recurse -Force"
       posix: |
         rm -rf ../eco_delvy_server/web/app
         cd ../eco_delvy_flutter

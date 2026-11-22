@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from pathlib import Path
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -11,7 +12,11 @@ from src.config import setup_logging
 
 from .worker import dispatch_jobs, worker_configuration
 
-load_dotenv()
+env_path = Path(__file__).resolve().parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    load_dotenv()
 setup_logging()
 logger = logging.getLogger(__name__)
 
