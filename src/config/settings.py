@@ -1,8 +1,8 @@
 """Application settings using Pydantic."""
 
-from typing import Optional, List, Annotated
+from typing import Optional, List, Annotated, Literal
 from pydantic_settings import BaseSettings, NoDecode
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from functools import lru_cache
 
 
@@ -40,8 +40,16 @@ class Settings(BaseSettings):
         description="Log format string"
     )
     
-    # Security Settings
-    api_key: Optional[str] = Field(None, description="API authentication key (optional)")
+    # Authentication Settings
+    auth_email: str = Field("", description="Configured login email")
+    auth_password: Optional[SecretStr] = Field(None, description="Configured login password")
+    auth_secret_key: Optional[SecretStr] = Field(None, description="Session signing secret")
+    auth_role: Literal["admin", "dispatcher", "viewer"] = Field(
+        "admin",
+        description="Role assigned to the configured account",
+    )
+    auth_token_ttl_minutes: int = Field(60, ge=1, le=1440, description="Session lifetime in minutes")
+    auth_cookie_secure: bool = Field(False, description="Require HTTPS for the session cookie")
     
     # File paths
     inputs_dir: str = Field("inputs", description="Input files directory")
