@@ -186,10 +186,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. **Configure environment** (optional):
+4. **Configure environment**:
 ```bash
 cp .env.example .env
-# Edit .env with your settings (API_TITLE, PORT, DEFAULT_SOLVER, etc.)
+# Windows PowerShell: Copy-Item .env.example .env
+# Generate a session secret and put the output in AUTH_SECRET_KEY:
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 5. **Run the API server**:
@@ -214,14 +216,6 @@ npm start
 - Web UI: http://localhost:3000
 - API Docs (Swagger): http://localhost:8000/docs
 - API Docs (ReDoc): http://localhost:8000/redoc
-
-8. **(Optional) Enable API Authentication**:
-```bash
-# Edit .env file and set API_KEY
-API_KEY=your-secret-key-here
-
-# Restart API server
-```
 
 ## 📚 API Endpoints
 
@@ -300,59 +294,25 @@ Response: ZIP file with CVRPTW_SMALL.json, CVRPTW_MEDIUM.json, CVRPTW_LARGE.json
 
 ### 🔐 API Authentication
 
-The API supports optional API key authentication. When enabled, all protected endpoints require an `api-key` header.
-
-**Enable Authentication:**
-
-Set the `API_KEY` environment variable in your `.env` file:
+Authentication uses an HttpOnly session cookie. Sign in with the configured account, then send the cookie with protected requests:
 
 ```bash
-API_KEY=your-secret-key-here
-```
+curl -c cookies.txt -H "Content-Type: application/json" \
+  -d "{\"email\":\"demo@fleet.local\",\"password\":\"FleetDemo!2026\"}" \
+  http://localhost:8000/auth/login
 
-**Making Authenticated Requests:**
-
-```bash
-# Using curl
-curl -X POST "http://localhost:8000/solve?solver=ortools" \
-  -H "api-key: your-secret-key-here" \
-  -H "Content-Type: application/json" \
-  -d @inputs/CVRPTW_SMALL.json
-
-# Using JavaScript fetch
-fetch('http://localhost:8000/solve?solver=ortools', {
-  method: 'POST',
-  headers: {
-    'api-key': 'your-secret-key-here',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(problemData)
-})
-
-# Using Python requests
-import requests
-
-headers = {
-    'api-key': 'your-secret-key-here',
-    'Content-Type': 'application/json'
-}
-
-response = requests.post(
-    'http://localhost:8000/solve?solver=ortools',
-    json=problem_data,
-    headers=headers
-)
+curl -b cookies.txt http://localhost:8000/auth/me
 ```
 
 **Protected Endpoints:**
-- `POST /solve` - Requires authentication
-- `POST /solve-stream` - Requires authentication
+- `POST /solve` - Requires an `admin` or `dispatcher` role
+- `POST /solve-stream` - Requires an `admin` or `dispatcher` role
 
 **Public Endpoints:**
 - `GET /health` - No authentication required
 - `GET /download-examples` - No authentication required
 
-**Note:** If `API_KEY` is not set, authentication is disabled and all endpoints are publicly accessible.
+`POST /auth/logout` clears the session, and `GET /auth/me` returns the signed-in account. There is one environment-configured account and no public registration. Replace the sample password and signing secret before deployment; use HTTPS with `AUTH_COOKIE_SECURE=true` in production.
 
 ### Query Parameters
 
@@ -368,13 +328,25 @@ response = requests.post(
 
 Configuration is managed through environment variables (`.env` file) or `src/config/settings.py`:
 
+Copy `.env.example` to `.env` for local development. The example uses a demo account:
+
+- Email: `demo@fleet.local`
+- Password: `FleetDemo!2026`
+
+Set `AUTH_SECRET_KEY` to a random value of at least 32 characters before starting the API. The configured account is the only account supported; there is no public registration. `admin` and `dispatcher` roles can solve routes, while `viewer` can sign in but cannot run solvers. Change the sample password and secret before deployment, and set `AUTH_COOKIE_SECURE=true` when serving over HTTPS.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `APP_NAME` | "Fleet Route Optimizer API" | Application name |
 | `API_HOST` | 127.0.0.1 | API server host |
 | `API_PORT` | 8000 | API server port |
 | `DEBUG` | false | Debug mode |
-| `API_KEY` | (empty) | API authentication key (optional) |
+| `AUTH_EMAIL` | (empty) | Login email for the configured account |
+| `AUTH_PASSWORD` | (empty) | Login password for the configured account |
+| `AUTH_SECRET_KEY` | (empty) | HMAC session signing secret (minimum 32 characters) |
+| `AUTH_ROLE` | admin | Account role: admin, dispatcher, or viewer |
+| `AUTH_TOKEN_TTL_MINUTES` | 60 | Session lifetime |
+| `AUTH_COOKIE_SECURE` | false | Set true when serving over HTTPS |
 | `DEFAULT_SOLVER` | ortools | Default solver (ortools/gurobi) |
 | `ORTOOLS_VEHICLE_PENALTY` | 100000.0 | OR-Tools vehicle penalty weight |
 | `GUROBI_VEHICLE_PENALTY` | 1000.0 | Gurobi vehicle penalty weight |
