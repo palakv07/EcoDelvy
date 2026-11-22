@@ -47,6 +47,8 @@ pip-selfcheck.json
 .env
 .env.local
 .env.*.local
+webui/.env
+webui/.env.*
 
 # Database
 *.db
@@ -102,3 +104,13 @@ coverage.xml
 *.swp
 *.swo
 *~
+
+# Dart and Flutter
+.dart_tool/
+.packages
+pubspec_overrides.yaml
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.scloud/
+eco_delvy_server/config/passwords.yaml

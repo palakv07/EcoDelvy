@@ -8,6 +8,7 @@ import LogViewer from './components/LogViewer';
 import SelectionModal from './components/SelectionModal';
 import Timeline from './components/Timeline';
 import Login from './Login';
+import apiUrl, { apiAuthHeaders } from './apiUrl';
 import './App.css';
 
 function App() {
@@ -23,7 +24,6 @@ function App() {
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [logs, setLogs] = useState([]);
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   const [timeLimit, setTimeLimit] = useState(60);
   const [solver, setSolver] = useState('ortools');
   const [vehiclePenaltyWeight, setVehiclePenaltyWeight] = useState(null); // null = use default
@@ -120,14 +120,32 @@ function App() {
       const url = `${apiUrl}/solve-stream?${params.toString()}`;
       
       // EventSource doesn't support POST, so we use fetch with streaming
-      const response = await fetch(url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jsonData),
-      });
+      let response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...apiAuthHeaders,
+          },
+          body: JSON.stringify(jsonData),
+        });
+      } catch (fetchError) {
+        if (fetchError instanceof TypeError) {
+          throw new Error(
+            `Cannot connect to the API at ${apiUrl}. Make sure the backend is running and the API URL and CORS settings are correct.`
+          );
+        }
+        throw fetchError;
+      }
+
+      if (response.status === 401) {
+        const body = await response.json();
+        throw new Error(
+          body.detail || 'API authentication failed. Check REACT_APP_API_KEY in webui/.env.local.'
+        );
+      }
 
       if (!response.ok) {
         if (response.status === 401) {

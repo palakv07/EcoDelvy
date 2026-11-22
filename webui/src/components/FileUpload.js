@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import apiUrl from '../apiUrl';
 import './FileUpload.css';
 
 function FileUpload({ onFileLoad }) {
@@ -26,7 +27,7 @@ function FileUpload({ onFileLoad }) {
 
   const handleDownloadExamples = async () => {
     try {
-      const response = await fetch('http://localhost:8000/download-examples');
+      const response = await fetch(`${apiUrl}/download-examples`);
       if (!response.ok) {
         throw new Error('Failed to download examples');
       }

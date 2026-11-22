@@ -22,6 +22,7 @@ class ProblemBuilder:
         depot = payload.get('depot', {}).get('location', [])
         vehicles = payload.get('vehicles', [])
         customers = payload.get('customers', [])
+        metadata = payload.get('metadata') or {}
         
         # Build list of active customers for the date
         active_customers = []
@@ -30,16 +31,18 @@ class ProblemBuilder:
             # - aggregated file: 'demands_units' is a dict keyed by date
             # - per-day file: 'demand_units' is a scalar for that day
             d = 0
-            if 'demands_units' in c:
-                d = c.get('demands_units', {}).get(date, 0)
-            elif 'demand_units' in c:
+            date_demands = c.get('demands_units')
+            if isinstance(date_demands, dict):
+                d = date_demands.get(date, 0)
+            elif c.get('demand_units') is not None:
                 d = c.get('demand_units', 0)
             
             if d and d > 0:
                 # Gather time window for date
                 tw = None
-                if 'time_windows' in c:
-                    tw = c.get('time_windows', {}).get(date)
+                date_windows = c.get('time_windows')
+                if isinstance(date_windows, dict):
+                    tw = date_windows.get(date)
                 if not tw and 'time_window' in c:
                     tw = c.get('time_window')
                 if not tw:
@@ -77,7 +80,7 @@ class ProblemBuilder:
         num_vehicles = len(vehicle_capacities)
         
         # Determine depot time window
-        depot_tw = payload.get('metadata', {}).get('depot_time_window')
+        depot_tw = metadata.get('depot_time_window')
         if not depot_tw:
             # Use global vehicle window min/max
             starts = [v.get('time_window', {}).get('start_min', 240) for v in vehicles]
@@ -122,7 +125,7 @@ class ProblemBuilder:
             return None
         if 'date' in payload:
             return payload.get('date')
-        md = payload.get('metadata', {})
+        md = payload.get('metadata') or {}
         if isinstance(md, dict) and 'date' in md:
             return md.get('date')
         if isinstance(md, dict) and 'date_range' in md:
@@ -157,7 +160,12 @@ class ProblemBuilder:
                     # Find demand for this date
                     d = 0
                     if 'demands_units' in c:
-                        d = c.get('demands_units', {}).get(solved_date, 0)
+                        demands_units = c.get('demands_units')
+                        d = (
+                            demands_units.get(solved_date, 0)
+                            if isinstance(demands_units, dict)
+                            else 0
+                        )
                     elif 'demand_units' in c:
                         d = c.get('demand_units', 0)
                     if d and d > 0:

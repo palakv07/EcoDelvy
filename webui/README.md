@@ -21,14 +21,20 @@ React-based web interface for the Fleet Route Optimizer [CVRPTW] - solving Capac
 npm install
 ```
 
-2. Make sure the backend API is running on `http://localhost:8000`
+2. Make sure the backend API is running on `http://localhost:8000` (from the project root, run `python -m src.app`). Set `REACT_APP_API_URL` before starting the frontend if the API is hosted at a different address; it defaults to `http://localhost:8000`.
 
-3. Start the development server:
+3. If `API_KEY` is set in the backend `.env`, create `webui/.env.local` with the same key:
+```env
+REACT_APP_API_KEY=your-backend-api-key
+```
+Restart the frontend after changing this file. The value is included in browser code, so use this only for a local/trusted frontend; do not embed a private API key in a public deployment.
+
+4. Start the development server:
 ```bash
 npm start
 ```
 
-The app will open at `http://localhost:3000`
+The app will open at `http://localhost:3000`.
 
 ## Usage
 

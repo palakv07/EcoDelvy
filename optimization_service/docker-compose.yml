@@ -1,0 +1,19 @@
+services:
+  optimization-worker:
+    build:
+      context: ..
+      dockerfile: optimization_service/Dockerfile
+    environment:
+      SERVERPOD_WORKER_API_URL: ${SERVERPOD_WORKER_API_URL:?Set SERVERPOD_WORKER_API_URL}
+      OPTIMIZATION_WORKER_TOKEN: ${OPTIMIZATION_WORKER_TOKEN:?Set OPTIMIZATION_WORKER_TOKEN}
+      DISTANCE_CACHE_DB: /data/distance_cache.db
+      OSRM_BASE_URL: ${OSRM_BASE_URL:-http://router.project-osrm.org}
+      WORKER_POLL_INTERVAL_SECONDS: ${WORKER_POLL_INTERVAL_SECONDS:-2}
+    volumes:
+      - distance-cache:/data
+    ports:
+      - "127.0.0.1:8001:8001"
+    restart: unless-stopped
+
+volumes:
+  distance-cache:

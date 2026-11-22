@@ -64,6 +64,20 @@ docker run -p 8000:8000 \
   cvrptw-solver
 ```
 
+### Migrated Serverpod worker
+
+The private optimization worker uses:
+
+```text
+SERVERPOD_WORKER_API_URL=<Serverpod web-server origin>
+OPTIMIZATION_WORKER_TOKEN=<matching shared worker secret>
+```
+
+Configure the same worker secret in Serverpod as `optimizationWorkerToken`
+in `eco_delvy_server/config/passwords.yaml`, or deploy
+`SERVERPOD_PASSWORD_optimizationWorkerToken` with the Serverpod process.
+Do not commit `.env`, `passwords.yaml`, or worker tokens.
+
 ## Volumes
 
 The Docker setup uses volumes to persist data:
