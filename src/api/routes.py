@@ -12,10 +12,12 @@ from fastapi.responses import StreamingResponse, Response
 from ..models.api import SolveRequest, SolveResponse, HealthResponse, SolverConfig
 from ..services import SolverService
 from ..config import get_logger
-from .dependencies import verify_api_key
+from .auth_routes import router as auth_router
+from .dependencies import CurrentUser, require_roles
 
 logger = get_logger(__name__)
 router = APIRouter()
+router.include_router(auth_router, prefix="/auth", tags=["auth"])
 
 # Singleton service instance
 solver_service = SolverService()
@@ -41,12 +43,12 @@ async def solve_endpoint(
     vehicle_penalty_weight: float = Query(None, description="Weight for minimizing vehicles"),
     distance_weight: float = Query(1.0, description="Weight for distance minimization"),
     mip_gap: float = Query(0.01, description="MIP optimality gap for Gurobi"),
-    _: None = Depends(verify_api_key)
+    _: CurrentUser = Depends(require_roles("admin", "dispatcher"))
 ):
     """
     Solve a CVRPTW problem from JSON payload.
 
-    Requires authentication if API_KEY environment variable is set.
+    Requires an authenticated admin or dispatcher account.
     
     Query parameters:
     - time_limit: Time limit in seconds (default 60)
@@ -97,12 +99,12 @@ async def solve_stream_endpoint(
     vehicle_penalty_weight: float = Query(None, description="Weight for minimizing vehicles"),
     distance_weight: float = Query(1.0, description="Weight for distance minimization"),
     mip_gap: float = Query(0.01, description="MIP optimality gap for Gurobi"),
-    _: None = Depends(verify_api_key)
+    _: CurrentUser = Depends(require_roles("admin", "dispatcher"))
 ):
     """
     Solve a CVRPTW problem with Server-Sent Events (SSE) streaming of logs.
 
-    Requires authentication if API_KEY environment variable is set.
+    Requires an authenticated admin or dispatcher account.
     
     Query parameters:
     - time_limit: Time limit in seconds (default 60)

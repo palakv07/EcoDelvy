@@ -36,3 +36,15 @@ class HealthResponse(BaseModel):
     """Health check response."""
     status: str = Field(..., description="Service status: 'ready' or 'busy'")
     message: Optional[str] = Field(None, description="Additional status message")
+
+
+class LoginRequest(BaseModel):
+    """Credentials for the configured account."""
+    email: str = Field(..., min_length=3, max_length=254)
+    password: str = Field(..., min_length=1, max_length=256)
+
+
+class UserResponse(BaseModel):
+    """Authenticated account details."""
+    email: str
+    role: str

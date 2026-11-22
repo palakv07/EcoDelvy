@@ -8,6 +8,7 @@ import urllib.request
 import urllib.error
 import json
 import time
+from pathlib import Path
 from typing import List, Tuple, Optional, Dict
 
 from ..config import get_logger
@@ -27,7 +28,7 @@ class DistanceCacheService:
             db_path: Path to SQLite database file
             osrm_base_url: Base URL for OSRM routing API
         """
-        self.db_path = db_path
+        self.db_path = str(Path(db_path).expanduser().resolve())
         self.osrm_base_url = osrm_base_url
         self._init_db()
     
