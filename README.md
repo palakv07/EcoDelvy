@@ -41,10 +41,32 @@ Fleet Route Optimizer is a comprehensive web-based application for solving compl
 - 🏗️ **Clean Architecture**: Modular, maintainable, and scalable codebase
 - 🔄 **Server-Sent Events**: Real-time log streaming during optimization
 - 🎨 **Pydantic Models**: Type-safe data validation and serialization
+- 🏛️ **Place Stories for Stops (HackBriven Track 3)**: Reveal hidden local history, gate access instructions, and traffic hazard tips when drivers arrive within 150m of a delivery stop. Community driver notes powered by Serverpod 4 & PostgreSQL.
 
 <div align="center">
   <img src="assets/screenshots/demo.gif" alt="Fleet Route Optimizer Demo" width="auto"/>
 </div>
+
+---
+
+## 🏛️ EcoDelvy Stories: Place Stories for Stops (HackBriven Track 3)
+
+> **Track 3: "Hidden in plain sight: reveal the hidden stories, history and life of a place to the people standing in it"**
+
+Built with **Flutter, Riverpod, and Serverpod 4** (with embedded PostgreSQL), this feature brings delivery routes to life by connecting fleet logistics with the rich local tapestry of each stop:
+
+1. **Route & Stop Visualization**: Renders vehicle delivery routes using free OpenStreetMap tiles (`flutter_map`).
+2. **Proximity-Revealed Place Knowledge**: When a driver approaches within **150 meters** of a stop, the app unlocks curated hidden stories — historic origins, access codes, loading bays, and safety hazards. Includes an on-screen **"Simulate Arrival"** button for indoor demos.
+3. **Community Driver Notes**: Drivers can share practical on-ground advice with peer drivers. All notes are stored in PostgreSQL with server-enforced author-only deletion (`user A cannot delete user B's notes`), 280-character limits, and automatic moderation (notes reported 3 times are hidden).
+4. **Solver Integration**: Imports CVRPTW solver solutions over HTTP or JSON, automatically preserving existing place stories and driver notes by matching stop coordinates.
+5. **Privacy First**: Driver distance is computed **100% on-device**. Driver locations are never stored in the database or transmitted across the network.
+
+### 📜 Attribution & Credits
+* **Original CVRPTW Solver**: Based on [fleet-route-optimizer-cvrptw](https://github.com/walterwootz/fleet-route-optimizer-cvrptw) by **walterwootz**.
+* **Map Tiles**: [OpenStreetMap](https://www.openstreetmap.org/) contributors (ODbL).
+* **Place Stories & Cultural Heritage**: Curated from OpenStreetMap data, Wikipedia contributors (CC BY-SA 4.0), and Bengaluru Urban History Archives.
+
+---
 
 ## 🏗️ Project Structure
 

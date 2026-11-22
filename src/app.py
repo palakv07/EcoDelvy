@@ -1,6 +1,7 @@
 """Main application entry point."""
 
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,11 +15,22 @@ logger = get_logger(__name__)
 # Get settings
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler."""
+    logger.info(f"{settings.app_name} starting up...")
+    logger.info(f"Debug mode: {settings.debug}")
+    yield
+    logger.info(f"{settings.app_name} shutting down...")
+
+
 # Create FastAPI app
 app = FastAPI(
     title=settings.app_name,
     description="Fleet Route Optimizer - API for solving Capacitated Vehicle Routing Problem with Time Windows (CVRPTW) using real-world distances and traffic patterns",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS
@@ -32,19 +44,6 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(router, tags=["solver"])
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Run on application startup."""
-    logger.info(f"{settings.app_name} starting up...")
-    logger.info(f"Debug mode: {settings.debug}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Run on application shutdown."""
-    logger.info(f"{settings.app_name} shutting down...")
 
 
 if __name__ == "__main__":
