@@ -7,9 +7,12 @@ import RouteMap from './components/RouteMap';
 import LogViewer from './components/LogViewer';
 import SelectionModal from './components/SelectionModal';
 import Timeline from './components/Timeline';
+import Login from './Login';
 import './App.css';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [jsonData, setJsonData] = useState(null);
   const [originalData, setOriginalData] = useState(null);
   const [selectedVehicleIndices, setSelectedVehicleIndices] = useState(null);
@@ -20,7 +23,7 @@ function App() {
   const [error, setError] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [logs, setLogs] = useState([]);
-  const [apiUrl] = useState('http://localhost:8000');
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
   const [timeLimit, setTimeLimit] = useState(60);
   const [solver, setSolver] = useState('ortools');
   const [vehiclePenaltyWeight, setVehiclePenaltyWeight] = useState(null); // null = use default
@@ -29,6 +32,24 @@ function App() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const eventSourceRef = useRef(null);
   const logContentRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    axios.get(`${apiUrl}/auth/me`, { withCredentials: true })
+      .then((response) => {
+        if (active) setUser(response.data);
+      })
+      .catch(() => {
+        if (active) setUser(null);
+      })
+      .finally(() => {
+        if (active) setCheckingSession(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [apiUrl]);
 
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -101,6 +122,7 @@ function App() {
       // EventSource doesn't support POST, so we use fetch with streaming
       const response = await fetch(url, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -108,7 +130,12 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 401) {
+          setUser(null);
+          throw new Error('Your session expired. Please sign in again.');
+        }
+        const responseBody = await response.json().catch(() => null);
+        throw new Error(responseBody?.detail || `HTTP error! status: ${response.status}`);
       }
 
       const reader = response.body.getReader();
@@ -154,11 +181,37 @@ function App() {
     setSelectedRoute(null);
   };
 
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${apiUrl}/auth/logout`, {}, { withCredentials: true });
+    } catch (logoutError) {
+      console.error('Unable to clear the server session:', logoutError);
+    } finally {
+      setUser(null);
+      setJsonData(null);
+      setOriginalData(null);
+      setSolution(null);
+      setLogs([]);
+    }
+  };
+
+  if (checkingSession) {
+    return <div className="auth-loading">Checking your session…</div>;
+  }
+
+  if (!user) {
+    return <Login apiUrl={apiUrl} onLogin={setUser} />;
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>🚚 Fleet Route Optimizer</h1>
         <p>Capacitated Vehicle Routing with Time Windows • Real-world Routing • Traffic-aware Optimization</p>
+        <div className="header-account">
+          <span>{user.email} · {user.role}</span>
+          <button type="button" onClick={handleLogout}>Sign out</button>
+        </div>
       </header>
 
       <main className="app-main">
