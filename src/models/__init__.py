@@ -11,12 +11,6 @@ from .domain import (
     Route,
     Solution,
 )
-from .api import (
-    SolveRequest,
-    SolveResponse,
-    HealthResponse,
-    SolverConfig,
-)
 
 __all__ = [
     # Domain models
@@ -29,9 +23,4 @@ __all__ = [
     "RouteStop",
     "Route",
     "Solution",
-    # API models
-    "SolveRequest",
-    "SolveResponse",
-    "HealthResponse",
-    "SolverConfig",
 ]

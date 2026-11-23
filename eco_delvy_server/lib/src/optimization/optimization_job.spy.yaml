@@ -1,0 +1,20 @@
+class: OptimizationJob
+table: optimization_job
+fields:
+  userIdentifier: String
+  status: String
+  solver: String
+  payloadJson: String
+  timeLimit: int
+  vehiclePenaltyWeight: double?
+  distanceWeight: double
+  mipGap: double
+  resultJson: String?
+  errorMessage: String?
+  createdAt: DateTime
+  startedAt: DateTime?
+  completedAt: DateTime?
+  attemptCount: int?, scope=serverOnly
+  leaseExpiresAt: DateTime?, scope=serverOnly
+  leaseToken: String?, scope=serverOnly
+  lastLogSequence: int?, scope=serverOnly

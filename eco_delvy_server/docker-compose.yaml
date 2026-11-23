@@ -1,0 +1,30 @@
+services:
+  # Development services
+  postgres:
+    image: ghcr.io/serverpod/postgres:16
+    ports:
+      - "8190:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: eco_delvy
+      POSTGRES_PASSWORD: ${SERVERPOD_DB_PASSWORD:?Set SERVERPOD_DB_PASSWORD}
+    volumes:
+      - eco_delvy_data:/var/lib/postgresql/data
+
+
+  # Test services
+  postgres_test:
+    image: ghcr.io/serverpod/postgres:16
+    ports:
+      - "9090:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: eco_delvy_test
+      POSTGRES_PASSWORD: ${SERVERPOD_TEST_DB_PASSWORD:?Set SERVERPOD_TEST_DB_PASSWORD}
+    volumes:
+      - eco_delvy_test_data:/var/lib/postgresql/data
+
+
+volumes:
+  eco_delvy_data:
+  eco_delvy_test_data:

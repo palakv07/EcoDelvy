@@ -1,0 +1,11 @@
+name: _
+publish_to: none
+
+environment:
+  sdk: '^3.12.2'
+
+workspace:
+  - eco_delvy_client
+  - eco_delvy_server
+  - eco_delvy_flutter
+

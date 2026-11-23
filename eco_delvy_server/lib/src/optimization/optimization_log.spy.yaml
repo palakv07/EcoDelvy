@@ -1,0 +1,7 @@
+class: OptimizationLog
+table: optimization_log
+fields:
+  jobId: int, relation(parent=optimization_job)
+  sequence: int
+  message: String
+  createdAt: DateTime
